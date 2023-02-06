@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 let fs = require('fs');
+let formidable = require('formidable');
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
@@ -18,6 +19,7 @@ app.post('/', async (req,res)=>{
     const user = {lastname: 'rankine'}
     res.send(user)
 })
+
 //Create user directory
 app.post('/CreateUserDirectory', async (req,res)=>{
      //Create directory where user files stored
@@ -36,6 +38,33 @@ app.post('/CreateUserDirectory', async (req,res)=>{
     }
 })
 
+let file
+//Get user directory
+app.post('/getUserDirectory', async (req,res)=>{
+    let myPromise = new Promise(function (resolve) {
+    let username = req.body.user;
+    let userDir = __dirname + '/UserFolders/' + username
+     console.log(userDir)
+     fs.readdir(userDir, (error, files) => {
+        if (error) console.log(error)
+        files.forEach(file => console.log(file))
+        if (files != undefined) {
+        files = JSON.stringify({
+          'userDir': files
+        })
+        resolve(files);
+        res.send(files)
+        }
+        else{
+          res.send(undefined)
+        }
+      })
+      });
+
+      file = await myPromise.then()
+
+})
+
 //Sign into server and allow request
 app.get('/allowRequests',async(req,res)=>{
     if(requestsAllowed == true){
@@ -49,6 +78,23 @@ app.get('/allowRequests',async(req,res)=>{
     res.send('requests will now be accepted')
 })
 
+//uploads image to user file directory
+app.post('/upload',async (req,res)=>{
+    let userUploadedFiles = new formidable.IncomingForm();
+    userUploadedFiles.parse(req, function (err, fields, files) {
+    let user = fields.username + '/';
+    let oldpath = files.filetoupload.filepath;
+    let newpath = __dirname + '/UserFolders/' + user + files.filetoupload.originalFilename;
+    fs.rename(oldpath, newpath, function (err) {
+      if (err) throw err;
+      fields;
+      res.redirect('http://localhost:3000/accountmain-page/accountmain.html');
+      console.log('file stored', files.originalFilename)
+    });
+  });
+  
+})
+
 //Sends requested file to webpage
 app.all('*', async(req,res)=>{
     if(requestsAllowed){
@@ -57,8 +103,8 @@ app.all('*', async(req,res)=>{
         let currentUser = user[1];
         let fileRequested = user[2];
         if(req.url.toString().includes(currentUser)){
-            let newFileLocation = 'C:/Users/logan/source/repos/Decentralized-Personal-Cloud-Storage-Application-Storage-server-/UserFolders/' + currentUser + '/' + fileRequested
-            var remove = "C:/Users/logan/source/repos/Decentralized-Personal-Cloud-Storage-Application/UserFolders/" + currentUser + '/' + fileRequested
+            let newFileLocation = 'C:/Users/logan/source/repos/Decentralized-Personal-Cloud-Storage-Application-Storage-server-/UserFolders/' 
+            + currentUser + '/' + fileRequested
             res.sendFile(newFileLocation);
             console.log("image requested:", newFileLocation)
         }
