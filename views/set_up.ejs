@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <Title>Configure</Title>
+    </head>
+    <body>
+        
+
+        <form class="server-config" method="post" action="/configure">
+            <h1>Use default</h1>
+
+            <label class="box-labels" >IP address to host server:</label><br>
+            <label><%= IPaddress %></label>><br>
+            
+            <label class="box-labels" >Port number:</label><br>
+            <label><%= PortNumber %></label>><br>
+
+            <a href="change-settings.html">Edit settings</a><br>
+
+            <button id ="configure_button" class="configure-button" onclick="">Use default</button>
+        </form>
+    </body>
+</html>

@@ -2,22 +2,50 @@ const express = require('express');
 const app = express();
 let fs = require('fs');
 let formidable = require('formidable');
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.set('viewengine', 'ejs');
 
 //Read configure file before server start
 let server_configuration = fs.readFileSync('server_config.txt')
 
-let first_start = server_configuration.toString()
-first_start.split(':')[1]
+server_configuration = server_configuration.toString()
+
+const server_configuration_settings = server_configuration.split('\r\n')
+
+//Port number and IP address
+const port_number = server_configuration_settings[2].split(':')[1];
+const host_IP = server_configuration_settings[1].split(':')[1];
+const webPortNumber = 3000
+const webIPaddress = 'localhost'
+
 
 let requestsAllowed = false;
-app.post('/', async (req,res)=>{
-    //res.sendFile(__dirname + '/set_up.html')
-    var user1 = req.body.user
-    console.log(user1)
-    const user = {lastname: 'rankine'}
-    res.send(user)
+app.get('/', async (req,res)=>{
+    await res.render('set_up.ejs', {IPaddress:host_IP,PortNumber: port_number});
+})
+
+app.get('/change-settings.html', async (req,res)=>{
+  res.sendFile(__dirname + '/change-settings.html')
+})
+
+app.post('/configure', async (req,res)=>{
+  console.log('configuring server')
+  
+  //Gets the user inputs from web form
+  let startUP = 'firstStart:' + server_configuration_settings[0].split(':')[1];
+  let ip = 'host:' + req.body.IP;
+  let port = 'port:' + req.body.portNumber
+
+  //Put inputted values into a string to append to server config file
+  let add = startUP + '\r\n' + ip + '\r\n' + port
+
+  fs.writeFileSync('server_config.txt', add, function(err){
+    if(err) console.log(err)
+    console.log('New settings added to server config file');
+  });
+  res.send('Restart server to apply settings.')
 })
 
 //Create user directory
@@ -88,7 +116,7 @@ app.post('/upload',async (req,res)=>{
     fs.rename(oldpath, newpath, function (err) {
       if (err) throw err;
       fields;
-      res.redirect('http://localhost:3000/accountmain-page/accountmain.html');
+      res.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
       console.log('file stored', files.originalFilename)
     });
   });
@@ -114,6 +142,6 @@ app.all('*', async(req,res)=>{
       }
 })
 
-app.listen(3001, () => {
-  console.log('Storage server is up on port 3001');
+app.listen(port_number,host_IP, () => {
+  console.log('Storage server is running on IP address:', host_IP +',','Port number:',port_number);
 });
