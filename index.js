@@ -1,7 +1,9 @@
 const express = require('express');
+const sharp = require('sharp');
 const app = express();
 let fs = require('fs');
 let formidable = require('formidable');
+const http = require('http');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -18,7 +20,7 @@ const server_configuration_settings = server_configuration.split('\r\n')
 const port_number = server_configuration_settings[2].split(':')[1];
 const host_IP = server_configuration_settings[1].split(':')[1];
 const webPortNumber = 3000
-const webIPaddress = 'localhost'
+const webIPaddress = '10.125.25.146'
 
 
 let requestsAllowed = false;
@@ -107,7 +109,7 @@ app.get('/allowRequests',async(req,res)=>{
 })
 
 //uploads image to user file directory
-app.post('/upload',async (req,res)=>{
+app.post('/upload',async (req,result)=>{
     let userUploadedFiles = new formidable.IncomingForm();
     userUploadedFiles.parse(req, function (err, fields, files) {
     let user = fields.username + '/';
@@ -116,12 +118,67 @@ app.post('/upload',async (req,res)=>{
     fs.rename(oldpath, newpath, function (err) {
       if (err) throw err;
       fields;
-      res.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+      //send request to web server to add user file information 
+      sendUpload(fields.username,files.filetoupload.originalFilename)
+
+      result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
       console.log('file stored', files.originalFilename)
     });
   });
   
 })
+
+async function sendUpload(p_username,p_filename){
+
+  //get current data 
+  let date = new Date();
+
+  let year = date.getUTCFullYear()
+  let month = date.getUTCMonth()
+  let day = date.getUTCDate()
+
+  let dateuploaded = year + '-' + month + '-' + day
+
+  let sendFileInfomation = JSON.stringify({
+    'user': p_username,
+    'filename': p_filename,
+    'dateuploaded': dateuploaded
+  });
+
+  let sendFileInfoOptions = {
+    hostname: webIPaddress,
+    path: '/dateUploaded',
+    port: webPortNumber,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(sendFileInfomation)
+    }
+  }
+  //Requests from storage server all files stored in a users folder
+let sendFileInfoReq = http.request(sendFileInfoOptions, (res) => {
+  let response = ''
+   
+  //Gets the chunked data recieved from storage server
+  res.on('data', (chunk) => {
+    response += chunk;
+  });
+  
+  //Ending the response 
+  res.on('end', () => {
+    //Ends the stream of data once it reaches an end
+    sendFileInfoReq.end()
+
+    //JSON parse the data recieved so it can be read
+    console.log('Body:', JSON.parse(response))
+
+  });
+}).on("error", (err) => {
+  console.log("Error: ", err)
+  //Sends username to storage server to be used to get the correct users directory information
+}).end(sendFileInfomation)
+  
+}
 
 //Sends requested file to webpage
 app.all('*', async(req,res)=>{
@@ -131,9 +188,20 @@ app.all('*', async(req,res)=>{
         let currentUser = user[1];
         let fileRequested = user[2];
         if(req.url.toString().includes(currentUser)){
+            
             let newFileLocation = 'C:/Users/logan/source/repos/Decentralized-Personal-Cloud-Storage-Application-Storage-server-/UserFolders/' 
             + currentUser + '/' + fileRequested
+
+            /*
+            awaitsharp(newFileLocation).resize(200,200,{
+              fit: sharp.fit.contain
+            }).toFile('temp.jpg');
+            
+            res.sendFile(__dirname + '/temp.jpg');
+            */
+
             res.sendFile(newFileLocation);
+
             console.log("image requested:", newFileLocation)
         }
     }
