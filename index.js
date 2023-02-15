@@ -20,7 +20,7 @@ const server_configuration_settings = server_configuration.split('\r\n')
 const port_number = server_configuration_settings[2].split(':')[1];
 const host_IP = server_configuration_settings[1].split(':')[1];
 const webPortNumber = 3000
-const webIPaddress = '10.125.25.146'
+const webIPaddress = 'localhost'
 
 
 let requestsAllowed = false;
@@ -122,7 +122,7 @@ app.post('/upload',async (req,result)=>{
       sendUpload(fields.username,files.filetoupload.originalFilename)
 
       result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
-      console.log('file stored', files.originalFilename)
+      console.log('file stored', files.filetoupload.originalFilename)
     });
   });
   
@@ -133,11 +133,16 @@ async function sendUpload(p_username,p_filename){
   //get current data 
   let date = new Date();
 
-  let year = date.getUTCFullYear()
-  let month = date.getUTCMonth()
-  let day = date.getUTCDate()
+  let time = date.toLocaleTimeString()
+  let days = date.toLocaleDateString()
 
-  let dateuploaded = year + '-' + month + '-' + day
+
+  let splitted = days.split('/')
+  let day = splitted[0]
+  let month = splitted[1]
+  let year = splitted[2]
+
+  let dateuploaded = year + '-' + month + '-' + day + " " + time
 
   let sendFileInfomation = JSON.stringify({
     'user': p_username,
