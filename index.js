@@ -20,7 +20,7 @@ const server_configuration_settings = server_configuration.split('\r\n')
 const port_number = server_configuration_settings[2].split(':')[1];
 const host_IP = server_configuration_settings[1].split(':')[1];
 const webPortNumber = 3000
-const webIPaddress = 'localhost'
+const webIPaddress = '10.0.0.15'
 
 
 let requestsAllowed = false;
@@ -68,33 +68,6 @@ app.post('/CreateUserDirectory', async (req,res)=>{
     }
 })
 
-let file
-//Get user directory
-app.post('/getUserDirectory', async (req,res)=>{
-    let myPromise = new Promise(function (resolve) {
-    let username = req.body.user;
-    let userDir = __dirname + '/UserFolders/' + username
-     console.log(userDir)
-     fs.readdir(userDir, (error, files) => {
-        if (error) console.log(error)
-        files.forEach(file => console.log(file))
-        if (files != undefined) {
-        files = JSON.stringify({
-          'userDir': files
-        })
-        resolve(files);
-        res.send(files)
-        }
-        else{
-          res.send(undefined)
-        }
-      })
-      });
-
-      file = await myPromise.then()
-
-})
-
 //Sign into server and allow request
 app.get('/allowRequests',async(req,res)=>{
     if(requestsAllowed == true){
@@ -112,18 +85,46 @@ app.get('/allowRequests',async(req,res)=>{
 app.post('/upload',async (req,result)=>{
     let userUploadedFiles = new formidable.IncomingForm();
     userUploadedFiles.parse(req, function (err, fields, files) {
-    let user = fields.username + '/';
-    let oldpath = files.filetoupload.filepath;
-    let newpath = __dirname + '/UserFolders/' + user + files.filetoupload.originalFilename;
-    fs.rename(oldpath, newpath, function (err) {
-      if (err) throw err;
-      fields;
-      //send request to web server to add user file information 
-      sendUpload(fields.username,files.filetoupload.originalFilename)
-
-      result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
-      console.log('file stored', files.filetoupload.originalFilename)
-    });
+      console.log('File recieved')
+      if(files.filetoupload.size != 0)
+      {
+        let user = fields.username + '/';
+        let oldpath = files.filetoupload.filepath;
+        let newpath = __dirname + '/UserFolders/' + user + files.filetoupload.originalFilename;
+        //check if file exists
+        if (!fs.existsSync(newpath)) {
+          fs.rename(oldpath, newpath, function (err) {
+          if (err) throw err;
+          fields;
+          //send request to web server to add user file information 
+          sendUpload(fields.username,files.filetoupload.originalFilename)
+    
+          result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+          console.log('file stored', files.filetoupload.originalFilename)
+          });
+        }
+        //change file name
+        else{
+          let type = '.' + newpath.slice(-3)
+          let file = newpath.replace(type,'');
+          let newpathcreated = file + '(1)' + type
+          let newFilename = files.filetoupload.originalFilename.replace(type, '(1)' + type)
+          fs.rename(oldpath, newpathcreated, function (err) {
+            if (err) throw err;
+            fields;
+            //send request to web server to add user file information 
+            sendUpload(fields.username,newFilename)
+      
+            result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+            console.log('file stored', files.filetoupload.originalFilename)
+            });
+        }
+        
+      }
+      else{
+        result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+        console.log('No file sent')
+      }
   });
   
 })
@@ -136,13 +137,12 @@ async function sendUpload(p_username,p_filename){
   let time = date.toLocaleTimeString()
   let days = date.toLocaleDateString()
 
-
   let splitted = days.split('/')
   let day = splitted[0]
   let month = splitted[1]
   let year = splitted[2]
 
-  let dateuploaded = year + '-' + month + '-' + day + " " + time
+  let dateuploaded = day + '-' + month + '-' + year + " " + time
 
   let sendFileInfomation = JSON.stringify({
     'user': p_username,
@@ -218,3 +218,31 @@ app.all('*', async(req,res)=>{
 app.listen(port_number,host_IP, () => {
   console.log('Storage server is running on IP address:', host_IP +',','Port number:',port_number);
 });
+
+/*
+//Get user directory
+app.post('/getUserDirectory', async (req,res)=>{
+    let myPromise = new Promise(function (resolve) {
+    let username = req.body.user;
+    let userDir = __dirname + '/UserFolders/' + username
+     console.log(userDir)
+     fs.readdir(userDir, (error, files) => {
+        if (error) console.log(error)
+        files.forEach(file => console.log(file))
+        if (files != undefined) {
+        files = JSON.stringify({
+          'userDir': files
+        })
+        resolve(files);
+        res.send(files)
+        }
+        else{
+          res.send(undefined)
+        }
+      })
+      });
+
+      file = await myPromise.then()
+
+})
+*/
