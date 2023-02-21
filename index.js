@@ -4,10 +4,14 @@ const app = express();
 let fs = require('fs');
 let formidable = require('formidable');
 const http = require('http');
+const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.set('viewengine', 'ejs');
+
+let UserFiles = [];
 
 //Read configure file before server start
 let server_configuration = fs.readFileSync('server_config.txt')
@@ -20,7 +24,9 @@ const server_configuration_settings = server_configuration.split('\r\n')
 const port_number = server_configuration_settings[2].split(':')[1];
 const host_IP = server_configuration_settings[1].split(':')[1];
 const webPortNumber = 3000
-const webIPaddress = '10.0.0.15'
+const webIPaddress = '10.125.5.177'
+
+//Need to create Object to store User files
 
 
 let requestsAllowed = false;
@@ -96,7 +102,8 @@ app.post('/upload',async (req,result)=>{
           fs.rename(oldpath, newpath, function (err) {
           if (err) throw err;
           fields;
-          //send request to web server to add user file information 
+
+          //send request to web server to add user file information to MySQL server
           sendUpload(fields.username,files.filetoupload.originalFilename)
     
           result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
@@ -129,8 +136,26 @@ app.post('/upload',async (req,result)=>{
   
 })
 
-async function sendUpload(p_username,p_filename){
+app.post('/FileTokens', async(req,res)=>{
+  console.log('Request for token')
+  const user = req.body.UserInfo
+  const userFiles = req.body.UserFiles
 
+  //Loop through each file and add token
+  for(let i = 0; i < userFiles.length;i++){
+    //Create new object and add token to it
+    userFiles[i] = await GenerateToken(userFiles[i])
+  }
+
+  //Create object to be stored in Database
+  const m_user = {'User': user, 'Files': userFiles}
+  UserFiles.push(m_user)
+
+  res.send(userFiles)
+})
+
+async function sendUpload(p_username,p_filename){
+  
   //get current data 
   let date = new Date();
 
@@ -185,16 +210,55 @@ let sendFileInfoReq = http.request(sendFileInfoOptions, (res) => {
   
 }
 
+async function GenerateToken(p_userFile){
+  //Generate random string to be used as token to access file
+  const newUserToken = crypto.randomBytes(20).toString('base64url')
+  const temp = p_userFile
+
+  const user = {filename: temp.filename,dateuploaded: temp.dateuploaded, filetype: temp.filetype, token: newUserToken}
+
+  return user;
+}
+
 //Sends requested file to webpage
 app.all('*', async(req,res)=>{
+
+  //Find cookie to see who is requesting image
+  const url = req.url.toString()
+  const userRequest = url.split('/')[1]
+  const fileRequest = url.split('/')[2]
+
+  let userFiles 
+  let filename
+  UserFiles.forEach(element =>{
+    if(element.User.SessionID == userRequest){
+      //Find what image is
+      userFiles = element
+
+      userFiles.Files.forEach(file=>{
+        if(file.token == fileRequest){
+          filename = file
+
+          let newFileLocation = __dirname + '/UserFolders/' 
+          + userFiles.User.UserName + '/' + filename.filename
+      
+          res.sendFile(newFileLocation)
+        }
+      })
+      
+      console.log('found user!')
+    }
+  })
+  /*
     if(requestsAllowed){
+
         //get which user is requesting the image
         let user = req.url.toString().split('/')
         let currentUser = user[1];
         let fileRequested = user[2];
         if(req.url.toString().includes(currentUser)){
             
-            let newFileLocation = 'C:/Users/logan/source/repos/Decentralized-Personal-Cloud-Storage-Application-Storage-server-/UserFolders/' 
+            let newFileLocation = __dirname + '/UserFolders/' 
             + currentUser + '/' + fileRequested
 
             /*
@@ -203,7 +267,7 @@ app.all('*', async(req,res)=>{
             }).toFile('temp.jpg');
             
             res.sendFile(__dirname + '/temp.jpg');
-            */
+            
 
             res.sendFile(newFileLocation);
 
@@ -213,36 +277,9 @@ app.all('*', async(req,res)=>{
     else{
         res.send("404 not found")
       }
+  */
 })
 
 app.listen(port_number,host_IP, () => {
   console.log('Storage server is running on IP address:', host_IP +',','Port number:',port_number);
 });
-
-/*
-//Get user directory
-app.post('/getUserDirectory', async (req,res)=>{
-    let myPromise = new Promise(function (resolve) {
-    let username = req.body.user;
-    let userDir = __dirname + '/UserFolders/' + username
-     console.log(userDir)
-     fs.readdir(userDir, (error, files) => {
-        if (error) console.log(error)
-        files.forEach(file => console.log(file))
-        if (files != undefined) {
-        files = JSON.stringify({
-          'userDir': files
-        })
-        resolve(files);
-        res.send(files)
-        }
-        else{
-          res.send(undefined)
-        }
-      })
-      });
-
-      file = await myPromise.then()
-
-})
-*/
