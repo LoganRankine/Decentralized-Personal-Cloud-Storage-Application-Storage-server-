@@ -102,7 +102,7 @@ app.post("/upload", async (req, result) => {
 
   let userUploadedFiles = new formidable.IncomingForm();
   userUploadedFiles.parse(req, function (err, fields, files) {
-    console.log("File recieved");
+    console.log("File recieved at:",Date.now().toString());
     if (files.filetoupload.size != 0) {
       let user = fields.username + "/";
       let oldpath = files.filetoupload.filepath;
@@ -119,7 +119,7 @@ app.post("/upload", async (req, result) => {
 
           //send request to web server to add user file information to MySQL server
           sendUpload(fields.username, files.filetoupload.originalFilename);
-
+          console.log('File:',files.filetoupload.originalFilename, 'upload, from user:', fields.username, 'at' + Date.now().toString())
           result.redirect(
             "http://" +
               webIPaddress +
@@ -127,7 +127,7 @@ app.post("/upload", async (req, result) => {
               webPortNumber +
               "/accountmain-page/accountmain.html"
           );
-          console.log("file stored", files.filetoupload.originalFilename);
+          console.log("file stored", files.filetoupload.originalFilename, 'at:', Date.now().toString());
         });
       }
       //change file name
@@ -152,7 +152,7 @@ app.post("/upload", async (req, result) => {
               webPortNumber +
               "/accountmain-page/accountmain.html"
           );
-          console.log("file stored", files.filetoupload.originalFilename);
+          console.log("file stored:", files.filetoupload.originalFilename, 'at:', Date.now().toString());
         });
       }
     } else {
@@ -169,9 +169,10 @@ app.post("/upload", async (req, result) => {
 });
 
 app.post("/FileTokens", async (req, res) => {
-  console.log("Request for token");
   const user = req.body.UserInfo;
   const userFiles = req.body.UserFiles;
+
+  console.log(user.UserName,"request for file tokens");
 
   //Loop through each file and add token
   for (let i = 0; i < userFiles.length; i++) {
@@ -182,6 +183,7 @@ app.post("/FileTokens", async (req, res) => {
   //Create object to be stored in Database
   const m_user = { User: user, Files: userFiles };
   UserFiles.push(m_user);
+  console.log('File tokens created for user:',user)
 
   res.send(userFiles);
 });
@@ -230,7 +232,7 @@ async function sendUpload(p_username, p_filename) {
       res.on("end", () => {
         //Ends the stream of data once it reaches an end
         sendFileInfoReq.end();
-
+        console.log('Sent file info to database:',p_filename)
         //JSON parse the data recieved so it can be read
         console.log("Body:", JSON.parse(response));
       });
@@ -281,6 +283,8 @@ app.all("*", async (req, res) => {
 
             fs.unlink(__dirname + "/UserFolders/" + userFiles.User.UserName + '/' + filename.filename, async (err) => {
               if (err) {
+                res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
+                res.send('Error 404: Not found')
                 console.log('failed to delete');
               }
               //Delete file from MySQL server
@@ -304,14 +308,11 @@ app.all("*", async (req, res) => {
   
             res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
             res.sendFile(newFileLocation);
-            console.log('file downloaded')
+            console.log('file downloaded:', filename.filename)
           }
         });
       }
       console.log("found user!");
-    }
-    else{
-      res.send('Error 404: Not found')
     }
   });
 });
