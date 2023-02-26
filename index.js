@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 const uploadClass = require("./UploadClass");
 const deleteClass = require('./DeleteRequestClass')
+const renameClass = require('./RenameRequestClass')
 const zlib = require("zlib");
 const cors = require('cors')
 
@@ -29,9 +30,9 @@ const server_configuration_settings = server_configuration.split("\r\n");
 const port_number = server_configuration_settings[2].split(":")[1];
 const host_IP = server_configuration_settings[1].split(":")[1];
 const webPortNumber = 3000;
-const webIPaddress = "10.0.0.15";
+const webIPaddress = "192.168.0.109";
 
-app.use(cors({origin: webIPaddress + ':' + webPortNumber}))
+app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
 
 //Need to create Object to store User files
 
@@ -167,6 +168,14 @@ app.post("/upload", async (req, result) => {
     }
   });
 });
+
+//Rename file recieved
+app.put('/rename/*', async(req,res)=>{
+  //Authourise the user
+  console.log(req.body.file)
+  //renameClass.RenameFile(req.url)
+  console.log('renaming file request')
+})
 
 app.post("/FileTokens", async (req, res) => {
   const user = req.body.UserInfo;
