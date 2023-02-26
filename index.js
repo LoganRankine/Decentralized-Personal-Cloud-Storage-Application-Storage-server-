@@ -30,7 +30,7 @@ const server_configuration_settings = server_configuration.split("\r\n");
 const port_number = server_configuration_settings[2].split(":")[1];
 const host_IP = server_configuration_settings[1].split(":")[1];
 const webPortNumber = 3000;
-const webIPaddress = "192.168.0.109";
+const webIPaddress = "10.0.0.39";
 
 app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
 
