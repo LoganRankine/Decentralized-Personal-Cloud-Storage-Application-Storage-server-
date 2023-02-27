@@ -1,0 +1,26 @@
+fileID
+
+CREATE TABLE `userprofile`.`fileid` (
+  `FileID` INT NOT NULL AUTO_INCREMENT,
+  `UserID` INT NOT NULL,
+  PRIMARY KEY (`FileID`, `UserID`),
+  INDEX `iduser_idx` (`UserID` ASC) VISIBLE,
+  CONSTRAINT `iduser`
+    FOREIGN KEY (`UserID`)
+    REFERENCES `userprofile`.`user` (`iduser`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+FileInformation
+
+CREATE TABLE `userprofile`.`fileinformation` (
+  `FileID` INT NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `dateuploaded` DATETIME NOT NULL,
+  PRIMARY KEY (`FileID`),
+  CONSTRAINT `FileID`
+    FOREIGN KEY (`FileID`)
+    REFERENCES `userprofile`.`fileid` (`FileID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+

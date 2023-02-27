@@ -120,7 +120,13 @@ app.post("/upload", async (req, result) => {
 
           //get file type
           let mimetype = files.filetoupload.mimetype
-          let filetype = mimetype.split('/')[1]
+          let split = mimetype.split('/')
+          let int = split.length - 1
+          let filetype = split[int]
+
+          if(filetype.length > 6){
+            filetype = 'file'
+          }
 
           //send request to web server to add user file information to MySQL server
           sendUpload(fields.username, files.filetoupload.originalFilename, filetype);

@@ -1,0 +1,170 @@
+DELETE FROM `userprofile`.`fileid` WHERE (`FileID` = '38') and (`UserID` = '24');
+DELETE FROM `userprofile`.`fileinformation` WHERE (`FileID` = '38') and (`filename` = 'WIN_20230209_13_36_28_Pro.mp4');
+
+<html>
+    <head>
+        <title>Account Page</title>
+        <link rel="stylesheet" href="accountmain-style.css">
+        <script src="scriptFile\accountmain-script.js"></script>
+    </head>
+    <body class="background">
+
+        <div class="top_navbar">
+            <a id="logout" href="http://10.0.0.15:3000/Logout">Log out</a>
+            <a id="username">dev</a>
+
+            <form action="http://10.0.0.15:3001/upload" method="post" enctype="multipart/form-data">
+                <input onclick="fileSelect()" type="file" name="filetoupload" id="upload" hidden="hidden">
+                <label class= "upload-button" for="upload">Choose file</label>
+                <input type="submit" id="submit" hidden>
+                <label for="submit" class="upload-button">Upload</label>
+                <input hidden="hidden" name="username" id="username" value="dev" />
+            </form>
+        </div>
+        
+        <div class="showFiles">
+            <a class="columnHeader">
+                <label class="imageName-header">Filename</label>
+                <label class="fileType-header">File Type</label>
+                <label class="dateuploaded-header">Date Uploaded</label>
+                
+            </a>
+
+        
+            
+                <label hidden="hidden">1</label>
+                
+                <a id="button" class="column" download="DSC00301.JPG">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/DSC00301.JPG">-->
+                    <label class="imageName">DSC00301.JPG</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/4KNxqvxJoGZZ6xp1NPiylqVr0Pw">DSC00301.JPG</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/4KNxqvxJoGZZ6xp1NPiylqVr0Pw', 'DSC00301.JPG, 2')" class="popup download-button" id="select-action2">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('2')"> ...
+                        <input id="myPopDownload2" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/4KNxqvxJoGZZ6xp1NPiylqVr0Pw', 'DSC00301.JPG')" value="download" />
+                        <input id="myPopDelete2" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">JPG</label>
+                    <label class="dateuploaded">21-02-2023 16:32:31</label>
+
+                </a>
+            
+                <label hidden="hidden">2</label>
+                
+                <a id="button" class="column" download="DSC00256(1).JPG">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/DSC00256(1).JPG">-->
+                    <label class="imageName">DSC00256(1).JPG</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/7Og1CUpWRLG0vPQOADsJQLkuiDE">DSC00256(1).JPG</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/7Og1CUpWRLG0vPQOADsJQLkuiDE', 'DSC00256(1).JPG, 3')" class="popup download-button" id="select-action3">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('3')"> ...
+                        <input id="myPopDownload3" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/7Og1CUpWRLG0vPQOADsJQLkuiDE', 'DSC00256(1).JPG')" value="download" />
+                        <input id="myPopDelete3" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">JPG</label>
+                    <label class="dateuploaded">21-02-2023 16:33:43</label>
+
+                </a>
+            
+                <label hidden="hidden">3</label>
+                
+                <a id="button" class="column" download="DSC00372.JPG">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/DSC00372.JPG">-->
+                    <label class="imageName">DSC00372.JPG</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/FQ-lU7mVRwzjDJxj-PM8QfvxHe4">DSC00372.JPG</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/FQ-lU7mVRwzjDJxj-PM8QfvxHe4', 'DSC00372.JPG, 4')" class="popup download-button" id="select-action4">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('4')"> ...
+                        <input id="myPopDownload4" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/FQ-lU7mVRwzjDJxj-PM8QfvxHe4', 'DSC00372.JPG')" value="download" />
+                        <input id="myPopDelete4" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">JPG</label>
+                    <label class="dateuploaded">21-02-2023 16:34:15</label>
+
+                </a>
+            
+                <label hidden="hidden">4</label>
+                
+                <a id="button" class="column" download="DSC00157(1).JPG">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/DSC00157(1).JPG">-->
+                    <label class="imageName">DSC00157(1).JPG</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Rt-YteYiMSAk31Ow-LUaPte9ZrI">DSC00157(1).JPG</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Rt-YteYiMSAk31Ow-LUaPte9ZrI', 'DSC00157(1).JPG, 5')" class="popup download-button" id="select-action5">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('5')"> ...
+                        <input id="myPopDownload5" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Rt-YteYiMSAk31Ow-LUaPte9ZrI', 'DSC00157(1).JPG')" value="download" />
+                        <input id="myPopDelete5" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">JPG</label>
+                    <label class="dateuploaded">21-02-2023 17:43:36</label>
+
+                </a>
+            
+                <label hidden="hidden">5</label>
+                
+                <a id="button" class="column" download="DSC00439.JPG">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/DSC00439.JPG">-->
+                    <label class="imageName">DSC00439.JPG</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Dnf3uHeTcpZa7UISYXQoUXOhdBg">DSC00439.JPG</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Dnf3uHeTcpZa7UISYXQoUXOhdBg', 'DSC00439.JPG, 6')" class="popup download-button" id="select-action6">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('6')"> ...
+                        <input id="myPopDownload6" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/Dnf3uHeTcpZa7UISYXQoUXOhdBg', 'DSC00439.JPG')" value="download" />
+                        <input id="myPopDelete6" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">JPG</label>
+                    <label class="dateuploaded">22-02-2023 22:16:56</label>
+
+                </a>
+            
+                <label hidden="hidden">6</label>
+                
+                <a id="button" class="column" download="trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV">
+                    <!--<img class="previewImage" src="http://10.0.0.15:3001/dev/trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV">-->
+                    <label class="imageName">trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV</label>
+                    <!--<a class="imageName" href="http://10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/z9eOTv-rERuPUimRL9a_VBmLCyU">trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV</a>-->
+                    <input id="my-input" data-dropdown="true" hidden/>
+                    <select onchange="select('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/z9eOTv-rERuPUimRL9a_VBmLCyU', 'trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV, 7')" class="popup download-button" id="select-action7">
+                        <option value="empty"></option>
+                        <option value="download" >download</option>
+                        <option value="delete">delete</option>
+                    </select>
+                    <div class="popup download-button" onclick="myFunction('7')"> ...
+                        <input id="myPopDownload7" class="popuptext" type="button" onclick="download('10.0.0.15:3001/ACztn4TKcLSew7URCMAEzt5q9aU/z9eOTv-rERuPUimRL9a_VBmLCyU', 'trim.72A5959E-9AF3-4BDA-BB94-88EFD4E7605E.MOV')" value="download" />
+                        <input id="myPopDelete7" class="popuptext" type="button" value="delete"/>
+                
+                    </div>
+                    <label class="fileType">MOV</label>
+                    <label class="dateuploaded">22-02-2023 22:49:10</label>
+
+                </a>
+            
+              
+
+    </body>
+</html>
