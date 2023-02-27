@@ -124,10 +124,6 @@ app.post("/upload", async (req, result) => {
           let int = split.length - 1
           let filetype = split[int]
 
-          if(filetype.length > 6){
-            filetype = 'file'
-          }
-
           //send request to web server to add user file information to MySQL server
           sendUpload(fields.username, files.filetoupload.originalFilename, filetype);
           console.log('File:',files.filetoupload.originalFilename, 'upload, from user:', fields.username, 'at' + Date.now().toString())
