@@ -30,7 +30,7 @@ const server_configuration_settings = server_configuration.split("\r\n");
 const port_number = server_configuration_settings[2].split(":")[1];
 const host_IP = server_configuration_settings[1].split(":")[1];
 const webPortNumber = 3000;
-const webIPaddress = "10.0.0.39";
+const webIPaddress = "10.125.5.177";
 
 app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
 
@@ -118,8 +118,12 @@ app.post("/upload", async (req, result) => {
           if (err) throw err;
           fields;
 
+          //get file type
+          let mimetype = files.filetoupload.mimetype
+          let filetype = mimetype.split('/')[1]
+
           //send request to web server to add user file information to MySQL server
-          sendUpload(fields.username, files.filetoupload.originalFilename);
+          sendUpload(fields.username, files.filetoupload.originalFilename, filetype);
           console.log('File:',files.filetoupload.originalFilename, 'upload, from user:', fields.username, 'at' + Date.now().toString())
           result.redirect(
             "http://" +
@@ -171,10 +175,22 @@ app.post("/upload", async (req, result) => {
 
 //Rename file recieved
 app.put('/rename/*', async(req,res)=>{
-  //Authourise the user
-  console.log(req.body.file)
-  //renameClass.RenameFile(req.url)
-  console.log('renaming file request')
+  console.log(req.body)
+
+  UserFiles.forEach(async user=>{
+    if(user.User.SessionID == req.body.user){
+      var userFiles = user
+      userFiles.Files.forEach(async(file) => {
+        if(file.token == req.body.file){
+          await renameClass.RenameFile(req.body, file, userFiles.User.UserName, webIPaddress,webPortNumber)
+          res.send('OK')
+        }
+      })
+    }
+  })
+
+  //Authourise the user, rename file in directory and update SQL database
+  
 })
 
 app.post("/FileTokens", async (req, res) => {
@@ -197,7 +213,7 @@ app.post("/FileTokens", async (req, res) => {
   res.send(userFiles);
 });
 
-async function sendUpload(p_username, p_filename) {
+async function sendUpload(p_username, p_filename, p_filetype) {
   //get current data
   let date = new Date();
 
@@ -215,6 +231,8 @@ async function sendUpload(p_username, p_filename) {
     user: p_username,
     filename: p_filename,
     dateuploaded: dateuploaded,
+    filetype: p_filetype
+
   });
 
   let sendFileInfoOptions = {
