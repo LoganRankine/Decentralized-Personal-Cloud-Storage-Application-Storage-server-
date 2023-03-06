@@ -30,7 +30,7 @@ const server_configuration_settings = server_configuration.split("\r\n");
 const port_number = server_configuration_settings[2].split(":")[1];
 const host_IP = server_configuration_settings[1].split(":")[1];
 const webPortNumber = 3000;
-const webIPaddress = "10.125.5.177";
+const webIPaddress = "10.0.0.14";
 
 app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
 
@@ -289,63 +289,84 @@ async function GenerateToken(p_userFile) {
   return user;
 }
 
-//Sends requested file to webpage
-app.all("*", async (req, res) => {
-  //Find cookie to see who is requesting image
+//Download/ Preview file
+
+app.get("/download/*", async (req,res) =>{
+  console.log('download request')
+
+   // find user requesting
+   const url = req.url.toString();
+   const userRequest = url.split("/")[2];
+   const fileRequest = url.split("/")[3];
+ 
+   let userFiles;
+   let filename;
+   UserFiles.forEach((element) => {
+    
+     if (element.User.SessionID == userRequest) {
+      userFiles = element
+       userFiles.Files.forEach((file) => {
+        if (file.token == fileRequest) {
+          filename = file;
+
+          let newFileLocation = __dirname + "/UserFolders/" +
+            userFiles.User.UserName + "/" + filename.filename;
+
+          res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
+          res.sendFile(newFileLocation);
+          console.log('file downloaded:', filename.filename)
+        }
+      });
+     }
+ 
+   })
+
+})
+
+app.delete("/delete/*", async (req,res) =>{
+  console.log("delete request")
+
+  // find user requesting
   const url = req.url.toString();
-  const userRequest = url.split("/")[1];
-  const fileRequest = url.split("/")[2];
+  const userRequest = url.split("/")[2];
+  const fileRequest = url.split("/")[3];
 
   let userFiles;
   let filename;
+
   UserFiles.forEach((element) => {
+
     if (element.User.SessionID == userRequest) {
       //Find what image is
       userFiles = element;
 
-      const requestMode = url.split('.')[3]
-      //Delete from database
-      if(url.split('/')[3] == '1'){
-        userFiles.Files.forEach(async(file) => {
-          if (file.token == fileRequest) {
-            filename = file;
-
-            fs.unlink(__dirname + "/UserFolders/" + userFiles.User.UserName + '/' + filename.filename, async (err) => {
-              if (err) {
-                res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
-                res.send('Error 404: Not found')
-                console.log('failed to delete');
-              }
-              //Delete file from MySQL server
-              await deleteClass.deleteFile(webIPaddress, webPortNumber, file.FileID, userRequest);
-              console.log('File deleted:', file.filename, 'from user:', userFiles.User.UserName)
+      userFiles.Files.forEach(async(file) => {
+        if (file.token == fileRequest) {
+          filename = file;
+    
+          fs.unlink(__dirname + "/UserFolders/" + userFiles.User.UserName + '/' + filename.filename, async (err) => {
+            if (err) {
               res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
-              res.send('OK');
-            })
-          }
-        });
-        //find what file to delete 
-      }
-      //Download file
-      else if(url.split('/')[3] == '0'){
-        userFiles.Files.forEach((file) => {
-          if (file.token == fileRequest) {
-            filename = file;
-  
-            let newFileLocation = __dirname + "/UserFolders/" +
-              userFiles.User.UserName + "/" + filename.filename;
-  
-            res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
-            res.sendFile(newFileLocation);
-            console.log('file downloaded:', filename.filename)
-          }
-        });
-      }
-      console.log("found user!");
+              res.send('Error 404: Not found')
+              console.log('failed to delete');
+            }
+            //Delete file from MySQL server
+            await deleteClass.deleteFile(webIPaddress, webPortNumber, file.FileID, userRequest);
+            console.log('File deleted:', file.filename, 'from user:', userFiles.User.UserName)
+            res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
+            res.send('OK');
+          })
+        }
+      });
     }
-  });
-});
+  })
 
+})
+
+//Sends requested file to webpage
+app.all("*", async (req, res) => {
+  res.send("404 not found")
+});
 
 app.listen(port_number, host_IP, () => {
   console.log(
