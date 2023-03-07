@@ -290,6 +290,37 @@ async function GenerateToken(p_userFile) {
 }
 
 //Download/ Preview file
+app.get("/preview/*", async (req,res) =>{
+  console.log('download request')
+
+   // find user requesting
+   const url = req.url.toString();
+   const userRequest = url.split("/")[2];
+   const fileRequest = url.split("/")[3];
+ 
+   let userFiles;
+   let filename;
+   UserFiles.forEach((element) => {
+    
+     if (element.User.SessionID == userRequest) {
+      userFiles = element
+       userFiles.Files.forEach((file) => {
+        if (file.token == fileRequest) {
+          filename = file;
+
+          let newFileLocation = __dirname + "/UserFolders/" +
+            userFiles.User.UserName + "/" + filename.filename;
+
+          res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
+          res.sendFile(newFileLocation);
+          console.log('file downloaded:', filename.filename)
+        }
+      });
+     }
+ 
+   })
+
+})
 
 app.get("/download/*", async (req,res) =>{
   console.log('download request')
