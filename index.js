@@ -82,96 +82,11 @@ app.post("/CreateUserDirectory", async (req, res) => {
   }
 });
 
-//Sign into server and allow request
-app.get("/allowRequests", async (req, res) => {
-  if (requestsAllowed == true) {
-    requestsAllowed = false;
-    res.send("requests wont be accepted");
-    console.log("requests wont be accepted");
-  }
-  requestsAllowed = true;
-  console.log("requests will now be accepted");
-  //res.send('requests will now be accepted')
-  res.send("requests will now be accepted");
-});
-
 //uploads image to user file directory
 app.post("/upload", async (req, result) => {
-  //await uploadClass.UploadToServer(webIPaddress,webPortNumber,result,req)
-
-  let userUploadedFiles = new formidable.IncomingForm();
-  userUploadedFiles.parse(req, function (err, fields, files) {
-    console.log("File recieved at:",Date.now().toString());
-    if (files.filetoupload.size != 0) {
-      let user = fields.username + "/";
-      let oldpath = files.filetoupload.filepath;
-      let newpath =
-        __dirname +
-        "/UserFolders/" +
-        user +
-        files.filetoupload.originalFilename;
-      //check if file exists
-      if (!fs.existsSync(newpath)) {
-        fs.rename(oldpath, newpath, function (err) {
-          if (err) throw err;
-          fields;
-
-          //get file type
-          let mimetype = files.filetoupload.mimetype
-          let split = mimetype.split('/')
-          let int = split.length - 1
-          let filetype = split[int]
-
-          //send request to web server to add user file information to MySQL server
-          sendUpload(fields.username, files.filetoupload.originalFilename, filetype);
-          console.log('File:',files.filetoupload.originalFilename, 'upload, from user:', fields.username, 'at' + Date.now().toString())
-          result.redirect(
-            "http://" +
-              webIPaddress +
-              ":" +
-              webPortNumber +
-              "/accountmain-page/accountmain.html"
-          );
-          console.log("file stored", files.filetoupload.originalFilename, 'at:', Date.now().toString());
-        });
-      }
-      //change file name
-      else {
-        let type = "." + newpath.slice(-3);
-        let file = newpath.replace(type, "");
-        let newpathcreated = file + "(1)" + type;
-        let newFilename = files.filetoupload.originalFilename.replace(
-          type,
-          "(1)" + type
-        );
-        fs.rename(oldpath, newpathcreated, function (err) {
-          if (err) throw err;
-          fields;
-          //send request to web server to add user file information
-          sendUpload(fields.username, newFilename);
-
-          result.redirect(
-            "http://" +
-              webIPaddress +
-              ":" +
-              webPortNumber +
-              "/accountmain-page/accountmain.html"
-          );
-          console.log("file stored:", files.filetoupload.originalFilename, 'at:', Date.now().toString());
-        });
-      }
-    } else {
-      result.redirect(
-        "http://" +
-          webIPaddress +
-          ":" +
-          webPortNumber +
-          "/accountmain-page/accountmain.html"
-      );
-      console.log("No file sent");
-    }
-  });
-});
+  await uploadClass.UploadToServer(webIPaddress,webPortNumber,result,req)
+  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+})
 
 //Rename file recieved
 app.put('/rename/*', async(req,res)=>{
@@ -211,81 +126,7 @@ app.post("/FileTokens", async (req, res) => {
   console.log('File tokens created for user:',user)
 });
 
-async function sendUpload(p_username, p_filename, p_filetype) {
-  //get current data
-  let date = new Date();
-
-  let time = date.toLocaleTimeString();
-  let days = date.toLocaleDateString();
-
-  let splitted = days.split("/");
-  let day = splitted[0];
-  let month = splitted[1];
-  let year = splitted[2];
-
-  let dateuploaded = day + "-" + month + "-" + year + " " + time;
-
-  let sendFileInfomation = JSON.stringify({
-    user: p_username,
-    filename: p_filename,
-    dateuploaded: dateuploaded,
-    filetype: p_filetype
-
-  });
-
-  let sendFileInfoOptions = {
-    hostname: webIPaddress,
-    path: "/dateUploaded",
-    port: webPortNumber,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(sendFileInfomation),
-    },
-  };
-  //Requests from storage server all files stored in a users folder
-  let sendFileInfoReq = http
-    .request(sendFileInfoOptions, (res) => {
-      let response = "";
-
-      //Gets the chunked data recieved from storage server
-      res.on("data", (chunk) => {
-        response += chunk;
-      });
-
-      //Ending the response
-      res.on("end", () => {
-        //Ends the stream of data once it reaches an end
-        sendFileInfoReq.end();
-        console.log('Sent file info to database:',p_filename)
-        //JSON parse the data recieved so it can be read
-        console.log("Body:", JSON.parse(response));
-      });
-    })
-    .on("error", (err) => {
-      console.log("Error: ", err);
-      //Sends username to storage server to be used to get the correct users directory information
-    })
-    .end(sendFileInfomation);
-}
-
-async function GenerateToken(p_userFile) {
-  //Generate random string to be used as token to access file
-  const newUserToken = crypto.randomBytes(20).toString("base64url");
-  const temp = p_userFile;
-
-  const user = {
-    filename: temp.filename,
-    dateuploaded: temp.dateuploaded,
-    filetype: temp.filetype,
-    FileID: temp.FileID,
-    token: newUserToken,
-  };
-
-  return user;
-}
-
-//Download/ Preview file
+//Preview file
 app.get("/preview/*", async (req,res) =>{
   console.log('preview request')
 
@@ -318,6 +159,7 @@ app.get("/preview/*", async (req,res) =>{
 
 })
 
+//Download
 app.get("/download/*", async (req,res) =>{
   console.log('download request')
 

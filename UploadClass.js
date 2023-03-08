@@ -14,36 +14,66 @@ async function UploadToServer(webIPaddress, webPortNumber,result,req){
             let newpath = __dirname + '/UserFolders/' + user + files.filetoupload.originalFilename;
             //check if file exists
             if (!fs.existsSync(newpath)) {
-              fs.rename(oldpath, newpath, async function (err) {
+              fs.copyFile(oldpath, newpath, async function (err) {
               if (err) throw err;
+              
+              //Remove temp file 
+              fs.unlink(oldpath,function(err){
+                if(err){
+                  console.log(err)
+                }
+              })
+
               fields;
-    
-              //send request to web server to add user file information to MySQL server
-              await sendUpload(fields.username,files.filetoupload.originalFilename)
-              resolve()
-        
-              result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+
+              //get file type
+              let mimetype = files.filetoupload.mimetype
+              let split = mimetype.split('/')
+              let int = split.length - 1
+              let filetype = split[int]
+
               console.log('file stored', files.filetoupload.originalFilename)
+              //send request to web server to add user file information to MySQL server
+              await sendUpload(fields.username,files.filetoupload.originalFilename,filetype,webIPaddress,webPortNumber)
+              console.log("file stored", files.filetoupload.originalFilename)
+              resolve()
               });
-            }
-            //change file name
+            } 
+            //change filename as it exists already
             else{
-              let type = '.' + newpath.slice(-3)
-              let file = newpath.replace(type,'');
-              let newpathcreated = file + '(1)' + type
-              let newFilename = files.filetoupload.originalFilename.replace(type, '(1)' + type)
-              fs.rename(oldpath, newpathcreated, async function (err) {
+              console.log('file exists')
+
+              //Get random number
+              let randomNum = Math.floor(Math.random() * 9999);
+
+              //Add random number to filename so same file can be uploaded, just different file name
+              let newfilename = randomNum + '_' +files.filetoupload.originalFilename
+
+              let newfilenamepath = __dirname + '/UserFolders/' + user + newfilename;
+
+              fs.copyFile(oldpath, newfilenamepath, async function (err) {
+
                 if (err) throw err;
-                fields;
-                //send request to web server to add user file information 
-                await sendUpload(fields.username,newFilename, webIPaddress,webPortNumber).then(()=>{
-                    resolve()
-                    result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
-                    console.log('file stored', files.filetoupload.originalFilename)
-                })            
-                });
-            }
-            
+              
+              //Remove temp file 
+              fs.unlink(oldpath,function(err){
+                if(err){
+                  console.log(err)
+                }
+              })
+
+              //get file type
+              let mimetype = files.filetoupload.mimetype
+              let split = mimetype.split('/')
+              let int = split.length - 1
+              let filetype = split[int]
+
+              //send request to web server to add user file information to MySQL server
+              await sendUpload(fields.username,newfilename,filetype,webIPaddress,webPortNumber)
+              console.log("file stored", newfilename)
+              resolve()
+              })
+            }           
           }
           else{
             result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
@@ -53,7 +83,7 @@ async function UploadToServer(webIPaddress, webPortNumber,result,req){
     })
 }
 
-async function sendUpload(p_username,p_filename, webIPaddress,webPortNumber){
+async function sendUpload(p_username,p_filename,p_filetype,webIPaddress,webPortNumber){
     return new Promise((resolve, reject) =>{
     //get current data 
     let date = new Date();
@@ -71,7 +101,8 @@ async function sendUpload(p_username,p_filename, webIPaddress,webPortNumber){
     let sendFileInfomation = JSON.stringify({
       'user': p_username,
       'filename': p_filename,
-      'dateuploaded': dateuploaded
+      'dateuploaded': dateuploaded,
+      filetype: p_filetype
     });
   
     let sendFileInfoOptions = {
@@ -97,10 +128,7 @@ async function sendUpload(p_username,p_filename, webIPaddress,webPortNumber){
     res.on('end', () => {
       //Ends the stream of data once it reaches an end
       sendFileInfoReq.end()
-        resolve(JSON.parse(response))
-      //JSON parse the data recieved so it can be read
-      console.log('Body:', JSON.parse(response))
-  
+      resolve()
     });
   }).on("error", (err) => {
     console.log("Error: ", err)
