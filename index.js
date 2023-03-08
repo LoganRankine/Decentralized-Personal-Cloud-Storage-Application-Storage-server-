@@ -1,3 +1,4 @@
+//Module imports from node/js library 
 const express = require("express");
 const sharp = require("sharp");
 const app = express();
@@ -6,41 +7,36 @@ let formidable = require("formidable");
 const http = require("http");
 const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
+const zlib = require("zlib");
+const cors = require('cors')
+const file = require("./Server_configuration.json")
+
+//Created classes
 const uploadClass = require("./UploadClass");
 const deleteClass = require('./DeleteRequestClass')
 const renameClass = require('./RenameRequestClass')
-const zlib = require("zlib");
-const cors = require('cors')
+const tokenClass = require('./TokenGenClass')
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.set("viewengine", "ejs");
 
-
 let UserFiles = [];
 
-//Read configure file before server start
-let server_configuration = fs.readFileSync("server_config.txt");
-
-server_configuration = server_configuration.toString();
-
-const server_configuration_settings = server_configuration.split("\r\n");
-
 //Port number and IP address
-const port_number = server_configuration_settings[2].split(":")[1];
-const host_IP = server_configuration_settings[1].split(":")[1];
-const webPortNumber = 3000;
-const webIPaddress = "10.0.0.14";
+let port_number = file.FileServerPort
+let host_IP = file.FileServerIP
+let webPortNumber = file.WebServerPort
+let webIPaddress = file.WebServerIP
 
 app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
 
 //Need to create Object to store User files
-
 let requestsAllowed = false;
 app.get("/", async (req, res) => {
   await res.render("set_up.ejs", {
-    IPaddress: host_IP,
-    PortNumber: port_number,
+    IPaddress: file.FileServerIP,
+    PortNumber: file.FileServerPort,
   });
 });
 
@@ -52,18 +48,20 @@ app.post("/configure", async (req, res) => {
   console.log("configuring server");
 
   //Gets the user inputs from web form
-  let startUP = "firstStart:" + server_configuration_settings[0].split(":")[1];
-  let ip = "host:" + req.body.IP;
-  let port = "port:" + req.body.portNumber;
+  file.FirstStart = false;
+  file.FileServerIP = req.body.IP;
+  file.FileServerPort = req.body.portNumber;
 
-  //Put inputted values into a string to append to server config file
-  let add = startUP + "\r\n" + ip + "\r\n" + port;
+  let newjson = JSON.stringify(file)
 
-  fs.writeFileSync("server_config.txt", add, function (err) {
-    if (err) console.log(err);
-    console.log("New settings added to server config file");
-  });
-  res.send("Restart server to apply settings.");
+  fs.writeFile(__dirname + "Server_configuration.json",newjson,function(err){
+    if(err){
+      console.log(err)
+    }
+    console.log("Saved confige")
+    res.send("Restart server!")
+    process.exit()
+  })
 });
 
 //Create user directory
@@ -179,40 +177,38 @@ app.post("/upload", async (req, result) => {
 app.put('/rename/*', async(req,res)=>{
   console.log(req.body)
 
-  UserFiles.forEach(async user=>{
+  try{
+    //Find if user exists
+    UserFiles.forEach(async user=>{
+    //Match session ID on server to one provided
     if(user.User.SessionID == req.body.user){
       var userFiles = user
       userFiles.Files.forEach(async(file) => {
+        //Once user found, match the file tokens to the one provided in url
         if(file.token == req.body.file){
+          //Rename file
           await renameClass.RenameFile(req.body, file, userFiles.User.UserName, webIPaddress,webPortNumber)
           res.send('OK')
         }
       })
     }
   })
-
-  //Authourise the user, rename file in directory and update SQL database
-  
+  } catch(err){
+    console.log(err)
+    res.send('404')
+  }  
 })
 
 app.post("/FileTokens", async (req, res) => {
+
   const user = req.body.UserInfo;
   const userFiles = req.body.UserFiles;
 
   console.log(user.UserName,"request for file tokens");
 
-  //Loop through each file and add token
-  for (let i = 0; i < userFiles.length; i++) {
-    //Create new object and add token to it
-    userFiles[i] = await GenerateToken(userFiles[i]);
-  }
+  UserFiles.push(await tokenClass.CreateFileTokens(res,user,userFiles))
 
-  //Create object to be stored in Database
-  const m_user = { User: user, Files: userFiles };
-  UserFiles.push(m_user);
   console.log('File tokens created for user:',user)
-
-  res.send(userFiles);
 });
 
 async function sendUpload(p_username, p_filename, p_filetype) {
@@ -291,7 +287,7 @@ async function GenerateToken(p_userFile) {
 
 //Download/ Preview file
 app.get("/preview/*", async (req,res) =>{
-  console.log('download request')
+  console.log('preview request')
 
    // find user requesting
    const url = req.url.toString();
@@ -313,7 +309,7 @@ app.get("/preview/*", async (req,res) =>{
 
           res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
           res.sendFile(newFileLocation);
-          console.log('file downloaded:', filename.filename)
+          console.log('file previewed:', filename.filename)
         }
       });
      }
