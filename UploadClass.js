@@ -76,7 +76,7 @@ async function UploadToServer(webIPaddress, webPortNumber,result,req){
             }           
           }
           else{
-            result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+            result.redirect('http://' + webIPaddress +':' + webPortNumber + '/AccountPage');
             console.log('No file sent')
           }
       });

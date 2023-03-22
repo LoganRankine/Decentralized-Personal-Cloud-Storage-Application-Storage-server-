@@ -85,7 +85,7 @@ app.post("/CreateUserDirectory", async (req, res) => {
 //uploads image to user file directory
 app.post("/upload", async (req, result) => {
   await uploadClass.UploadToServer(webIPaddress,webPortNumber,result,req)
-  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/accountmain-page/accountmain.html');
+  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/AccountPage ');
 })
 
 //Rename file recieved
