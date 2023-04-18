@@ -31,8 +31,7 @@ async function updateDB(fileid,rename,webServerIP, webServerPort, user){
       'user' : user
     });
   
-    // options to send to storage server and puts username in header so server knows what to 
-    //call the new directory
+    // Request to rename file on database
     let options = {
       hostname: webServerIP,
       port: webServerPort,
@@ -44,19 +43,17 @@ async function updateDB(fileid,rename,webServerIP, webServerPort, user){
       }
     }
   
-    //Sends request to storage server 
+    //Send request to storage server 
     let createNewDirectory = http.request(options, async (res) => {  
       // Ending the response 
       res.on('OK', () => {
         createNewDirectory.end()
         resolve()
         console.log('renamed file on sql database')
-      });
-         
+      });    
     }).on("error", (err) => {
       console.log("Error: ", err)
     }).end(renamerequest)
-
   })
 }
 module.exports ={RenameFile}

@@ -2,13 +2,14 @@ const http = require("http");
 
 async function deleteFile(webIPaddress,webPortNumber,fileID, user){
     return new Promise((resolve, reject) =>{
+        //Request to delete file from SQL database
         let sendFileInfoOptions = {
             hostname: webIPaddress,
             path: '/delete/' + user + '/' + fileID,
             port: webPortNumber,
             method: 'DELETE',
           }
-          //Requests from storage server all files stored in a users folder
+        //Requests to delete file information
         let sendFileInfoReq = http.request(sendFileInfoOptions, (res) => {
           let response = ''
            
@@ -26,10 +27,8 @@ async function deleteFile(webIPaddress,webPortNumber,fileID, user){
           });
         }).on("error", (err) => {
           console.log("Error: ", err)
-          //Sends username to storage server to be used to get the correct users directory information
         }).end('delete')
-    })
-      
+    }) 
 }
 
 module.exports = {deleteFile}

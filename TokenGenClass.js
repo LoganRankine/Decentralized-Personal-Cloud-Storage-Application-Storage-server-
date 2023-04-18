@@ -26,6 +26,7 @@ async function GenerateToken(p_userFile) {
     const newUserToken = crypto.randomBytes(20).toString("base64url");
     const temp = p_userFile;
   
+    //Add generated token to file information
     const user = {
       filename: temp.filename,
       dateuploaded: temp.dateuploaded,

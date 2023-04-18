@@ -85,7 +85,7 @@ app.post("/CreateUserDirectory", async (req, res) => {
 //uploads image to user file directory
 app.post("/upload", async (req, result) => {
   await uploadClass.UploadToServer(webIPaddress,webPortNumber,result,req)
-  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/AccountPage ');
+  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/AccountPage');
 })
 
 //Rename file recieved
@@ -170,14 +170,16 @@ app.get("/download/*", async (req,res) =>{
  
    let userFiles;
    let filename;
+   //Find user files
    UserFiles.forEach((element) => {
-    
      if (element.User.SessionID == userRequest) {
       userFiles = element
        userFiles.Files.forEach((file) => {
+        //Get file that corresponds to file token 
         if (file.token == fileRequest) {
           filename = file;
 
+          //Get file directory
           let newFileLocation = __dirname + "/UserFolders/" +
             userFiles.User.UserName + "/" + filename.filename;
 
@@ -187,14 +189,11 @@ app.get("/download/*", async (req,res) =>{
         }
       });
      }
- 
    })
-
 })
 
 app.delete("/delete/*", async (req,res) =>{
   console.log("delete request")
-
   // find user requesting
   const url = req.url.toString();
   const userRequest = url.split("/")[2];
@@ -202,17 +201,15 @@ app.delete("/delete/*", async (req,res) =>{
 
   let userFiles;
   let filename;
-
+  //Find the user that matches user token
   UserFiles.forEach((element) => {
-
     if (element.User.SessionID == userRequest) {
       //Find what image is
       userFiles = element;
-
       userFiles.Files.forEach(async(file) => {
         if (file.token == fileRequest) {
           filename = file;
-    
+          //Delete file
           fs.unlink(__dirname + "/UserFolders/" + userFiles.User.UserName + '/' + filename.filename, async (err) => {
             if (err) {
               res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
@@ -229,7 +226,6 @@ app.delete("/delete/*", async (req,res) =>{
       });
     }
   })
-
 })
 
 //Sends requested file to webpage
