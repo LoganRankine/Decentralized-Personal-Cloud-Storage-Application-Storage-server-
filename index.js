@@ -17,7 +17,7 @@ const deleteClass = require('./DeleteRequestClass')
 const renameClass = require('./RenameRequestClass')
 const tokenClass = require('./TokenGenClass')
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true, limit: '10gb' }));
 app.use(express.json());
 app.set("viewengine", "ejs");
 

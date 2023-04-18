@@ -1,10 +1,16 @@
 const http = require('http');
+const express = require("express");
 let fs = require('fs');
 let formidable = require('formidable');
+const app = express();
+app.use(express.urlencoded({ extended: true, limit: '10gb' }));
+
+formidable.PersistentFile.ma
 
 async function UploadToServer(webIPaddress, webPortNumber,result,req){
     return new Promise((resolve, reject) =>{
-        let userUploadedFiles = new formidable.IncomingForm();
+        let userUploadedFiles = new formidable.IncomingForm({maxFileSize: '10gb'});
+      
         userUploadedFiles.parse(req, function (err, fields, files) {
           console.log('File recieved')
           if(files.filetoupload.size != 0)
