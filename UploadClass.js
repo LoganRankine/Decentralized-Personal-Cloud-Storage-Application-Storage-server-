@@ -9,7 +9,7 @@ formidable.PersistentFile.ma
 
 async function UploadToServer(webIPaddress, webPortNumber,result,req){
     return new Promise((resolve, reject) =>{
-        let userUploadedFiles = new formidable.IncomingForm({maxFileSize: '10gb'});
+        let userUploadedFiles = new formidable.IncomingForm({maxFileSize: '100gb'});
       
         userUploadedFiles.parse(req, function (err, fields, files) {
           console.log('File recieved')
