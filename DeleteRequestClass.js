@@ -1,33 +1,37 @@
 const http = require("http");
+const file = require("./Server_configuration.json");
+const webIPaddress = file.WebServerIP;
+const webPortNumber = file.WebServerPort;
 
-async function deleteFile(webIPaddress,webPortNumber,fileID, user){
-    return new Promise((resolve, reject) =>{
+async function deleteFile(req, res){
+  //Get variables from query
+  let sessionID = req.query["sessionID"]
+  let fileID = req.query["fileid"]
+
+  //Request to delete from database using data from query
+  //Returns filetoken and user directory
+  let fileToken = await deleteOnDB(sessionID,fileID)
+  console.log(fileToken)
+
+  //Ensure file token is recieved
+  fileToken = JSON.parse(fileToken)
+  res.send(fileToken)
+  return
+  
+  
+}
+
+async function deleteOnDB(sessionID, fileID){
+    return new Promise(async (resolve, reject) =>{
         //Request to delete file from SQL database
-        let sendFileInfoOptions = {
-            hostname: webIPaddress,
-            path: '/delete/' + user + '/' + fileID,
-            port: webPortNumber,
-            method: 'DELETE',
-          }
+        let deletedb = new URL(`http://${webIPaddress}:${webPortNumber}/delete?sessionID=${sessionID}&fileid=${fileID}`)
+        
         //Requests to delete file information
-        let sendFileInfoReq = http.request(sendFileInfoOptions, (res) => {
-          let response = ''
-           
-          //Gets the chunked data recieved from storage server
-          res.on('data', (chunk) => {
-            response += chunk;
-          });
-          
-          //Ending the response 
-          res.on('end', () => {
-            //Ends the stream of data once it reaches an end
-            if(sendFileInfoReq.end()){
-                resolve()
-            }
-          });
-        }).on("error", (err) => {
-          console.log("Error: ", err)
-        }).end('delete')
+        let deletedbRequest = await fetch(deletedb, {method: 'DELETE'})
+        let deleteResponse = await deletedbRequest.json()
+        console.log(deleteResponse)
+        resolve(deleteResponse)
+        
     }) 
 }
 

@@ -1,41 +1,37 @@
 const fs = require('fs')
 const http = require('http')
+const file = require("./Server_configuration.json");
+const crypto = require("crypto");
 
-async function RenameFile(reqBody, p_file, username, webServerIP, webServerPort){
-  //Get the files that are stored with user
-  let userFiles = p_file
+const FileServerIP = file.FileServerIP;
+const FileServerPort = file.FileServerPort;
+const webServerIP = file.WebServerIP;
+const webServerPort = file.WebServerPort;
 
-  //Get values from req 
-  let user = reqBody.user
-  let file = reqBody.file
-  let rename = reqBody.rename
+async function RenameFile(req){
+    let sessionID = req.query["sessionID"]
+    let fileID = req.query["fileid"]
 
-  const oldpath = __dirname + '/UserFolders/' + username + '/' + userFiles.filename
-  const newpath = __dirname + '/UserFolders/' + username + '/' + rename + '.' + userFiles.filetype
-  const newName = rename + '.' + userFiles.filetype
+    let NewFilename = req.body.newFilename 
 
-  fs.rename(oldpath,newpath, async (err)=>{
-    if (err) throw err;
-    await updateDB(userFiles.FileID, newName,webServerIP, webServerPort, user)
-    console.log('File renamed')
-  })
+    await updateDB(sessionID,fileID, NewFilename)
 
 }
 
-async function updateDB(fileid,rename,webServerIP, webServerPort, user){
+async function updateDB(sessionID,fileID, NewFilename){
+  
   return new Promise((resolve, reject) => {
     //Turns username into a JOSN object 
     let renamerequest = JSON.stringify({
-      'fileid': fileid,
-      'name' : rename,
-      'user' : user
+      'fileid': fileID,
+      'newFilename' : NewFilename,
     });
   
     // Request to rename file on database
     let options = {
       hostname: webServerIP,
       port: webServerPort,
-      path: '/rename',
+      path: `/rename?sessionID=${sessionID}`,
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-//Module imports from node/js library 
+//Module imports from node/js library
 const express = require("express");
 const sharp = require("sharp");
 const app = express();
@@ -8,28 +8,34 @@ const http = require("http");
 const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
 const zlib = require("zlib");
-const cors = require('cors')
-const file = require("./Server_configuration.json")
+const cors = require("cors");
+const file = require("./Server_configuration.json");
 
 //Created classes
 const uploadClass = require("./UploadClass");
-const deleteClass = require('./DeleteRequestClass')
-const renameClass = require('./RenameRequestClass')
-const tokenClass = require('./TokenGenClass')
+const deleteClass = require("./DeleteRequestClass");
+const renameClass = require("./RenameRequestClass");
+const tokenClass = require("./TokenGenClass");
+const authoriseClass = require("./AuthorisationClass");
 
-app.use(express.urlencoded({ extended: true, limit: '10gb' }));
+app.use(express.urlencoded({ extended: true, limit: "10gb" }));
 app.use(express.json());
 app.set("viewengine", "ejs");
 
 let UserFiles = [];
 
 //Port number and IP address
-let port_number = file.FileServerPort
-let host_IP = file.FileServerIP
-let webPortNumber = file.WebServerPort
-let webIPaddress = file.WebServerIP
+let port_number = file.FileServerPort;
+let host_IP = file.FileServerIP;
+let webPortNumber = file.WebServerPort;
+let webIPaddress = file.WebServerIP;
 
-app.use(cors({origin: 'http://' + webIPaddress + ':' + webPortNumber, exposedHeaders: 'application/json'}))
+app.use(
+  cors({
+    origin: "http://" + webIPaddress + ":" + webPortNumber,
+    exposedHeaders: "*",
+  })
+);
 
 //Need to create Object to store User files
 let requestsAllowed = false;
@@ -52,16 +58,20 @@ app.post("/configure", async (req, res) => {
   file.FileServerIP = req.body.IP;
   file.FileServerPort = req.body.portNumber;
 
-  let newjson = JSON.stringify(file)
+  let newjson = JSON.stringify(file);
 
-  fs.writeFile(__dirname + "Server_configuration.json",newjson,function(err){
-    if(err){
-      console.log(err)
+  fs.writeFile(
+    __dirname + "Server_configuration.json",
+    newjson,
+    function (err) {
+      if (err) {
+        console.log(err);
+      }
+      console.log("Saved confige");
+      res.send("Restart server!");
+      process.exit();
     }
-    console.log("Saved confige")
-    res.send("Restart server!")
-    process.exit()
-  })
+  );
 });
 
 //Create user directory
@@ -73,127 +83,79 @@ app.post("/CreateUserDirectory", async (req, res) => {
     if (!fs.existsSync(userDirectory)) {
       fs.mkdirSync(userDirectory);
       console.log("Created user folder:", user);
-      let response = { CreatedDirectory: userDirectory };
-      res.send(response);
+      res.statusCode = 200;
+      res.send("OK");
     }
   } catch (err) {
     console.error(err);
-    res.send(err);
+    res.statusCode = 400;
+    res.send("Bad Request");
   }
 });
 
 //uploads image to user file directory
-app.post("/upload", async (req, result) => {
-  await uploadClass.UploadToServer(webIPaddress,webPortNumber,result,req)
-  result.redirect('http://' + webIPaddress +':' + webPortNumber + '/AccountPage');
-})
+app.post("/upload?*", async (req, result) => {
+  try {
+    //Get sessionID from request
+    var sessionID = req.url.replace("/upload?sessionID=", "");
+
+    //Validate request
+    var userinformation = await authoriseClass.Authorise(sessionID);
+
+    await uploadClass.UploadToServer(result, req, userinformation);
+    result.status = 200;
+    result.send("File upload successful");
+  } catch (err) {
+    /*
+    UserFiles.forEach(async (user) => {
+      //Match session ID on server to one provided
+      if (user.User.SessionID == sessionID) {
+        await uploadClass.UploadToServer(
+          webIPaddress,
+          webPortNumber,
+          result,
+          req,
+          user.User.userDirectory,
+          user.User.UserName, 
+          sessionID
+        );
+        result.status = 200;
+        result.send("File upload successful");
+      }
+    });
+    */
+    console.error(err);
+    result.status = 400;
+    result.send("File upload unsuccessful");
+  }
+});
 
 //Rename file recieved
-app.put('/rename/*', async(req,res)=>{
-  console.log(req.body)
-
-  try{
-    //Find if user exists
-    UserFiles.forEach(async user=>{
-    //Match session ID on server to one provided
-    if(user.User.SessionID == req.body.user){
-      var userFiles = user
-      userFiles.Files.forEach(async(file) => {
-        //Once user found, match the file tokens to the one provided in url
-        if(file.token == req.body.file){
-          //Rename file
-          await renameClass.RenameFile(req.body, file, userFiles.User.UserName, webIPaddress,webPortNumber)
-          res.send('OK')
-        }
-      })
-    }
-  })
-  } catch(err){
-    console.log(err)
-    res.send('404')
-  }  
-})
+app.put("/rename?*", async (req, res) => {
+  try {
+    await renameClass.RenameFile(req);
+    res.send("OK");
+  } catch (err) {
+    console.log(err);
+    res.send("404");
+  }
+});
 
 app.post("/FileTokens", async (req, res) => {
-
   const user = req.body.UserInfo;
   const userFiles = req.body.UserFiles;
 
-  console.log(user.UserName,"request for file tokens");
+  console.log(user.UserName, "request for file tokens");
 
-  UserFiles.push(await tokenClass.CreateFileTokens(res,user,userFiles))
+  UserFiles.push(await tokenClass.CreateFileTokens(res, user, userFiles));
 
-  console.log('File tokens created for user:',user)
+  console.log("File tokens created for user:", user);
 });
 
 //Preview file
-app.get("/preview/*", async (req,res) =>{
-  console.log('preview request')
+app.get("/preview/*", async (req, res) => {
+  console.log("preview request");
 
-   // find user requesting
-   const url = req.url.toString();
-   const userRequest = url.split("/")[2];
-   const fileRequest = url.split("/")[3];
- 
-   let userFiles;
-   let filename;
-   UserFiles.forEach((element) => {
-    
-     if (element.User.SessionID == userRequest) {
-      userFiles = element
-       userFiles.Files.forEach((file) => {
-        if (file.token == fileRequest) {
-          filename = file;
-
-          let newFileLocation = __dirname + "/UserFolders/" +
-            userFiles.User.UserName + "/" + filename.filename;
-
-          res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
-          res.sendFile(newFileLocation);
-          console.log('file previewed:', filename.filename)
-        }
-      });
-     }
- 
-   })
-
-})
-
-//Download
-app.get("/download/*", async (req,res) =>{
-  console.log('download request')
-
-   // find user requesting
-   const url = req.url.toString();
-   const userRequest = url.split("/")[2];
-   const fileRequest = url.split("/")[3];
- 
-   let userFiles;
-   let filename;
-   //Find user files
-   UserFiles.forEach((element) => {
-     if (element.User.SessionID == userRequest) {
-      userFiles = element
-       userFiles.Files.forEach((file) => {
-        //Get file that corresponds to file token 
-        if (file.token == fileRequest) {
-          filename = file;
-
-          //Get file directory
-          let newFileLocation = __dirname + "/UserFolders/" +
-            userFiles.User.UserName + "/" + filename.filename;
-
-          res.header("Access-Control-Allow-Origin",'http://' + webIPaddress + ':' + webPortNumber)
-          res.sendFile(newFileLocation);
-          console.log('file downloaded:', filename.filename)
-        }
-      });
-     }
-   })
-})
-
-app.delete("/delete/*", async (req,res) =>{
-  console.log("delete request")
   // find user requesting
   const url = req.url.toString();
   const userRequest = url.split("/")[2];
@@ -201,36 +163,120 @@ app.delete("/delete/*", async (req,res) =>{
 
   let userFiles;
   let filename;
-  //Find the user that matches user token
   UserFiles.forEach((element) => {
     if (element.User.SessionID == userRequest) {
-      //Find what image is
       userFiles = element;
-      userFiles.Files.forEach(async(file) => {
+      userFiles.Files.forEach((file) => {
         if (file.token == fileRequest) {
           filename = file;
-          //Delete file
-          fs.unlink(__dirname + "/UserFolders/" + userFiles.User.UserName + '/' + filename.filename, async (err) => {
-            if (err) {
-              res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
-              res.send('Error 404: Not found')
-              console.log('failed to delete');
-            }
-            //Delete file from MySQL server
-            await deleteClass.deleteFile(webIPaddress, webPortNumber, file.FileID, userRequest);
-            console.log('File deleted:', file.filename, 'from user:', userFiles.User.UserName)
-            res.header("Access-Control-Allow-Origin", 'http://' + webIPaddress + ':' + webPortNumber);
-            res.send('OK');
-          })
+
+          let newFileLocation =
+            __dirname +
+            "/UserFolders/" +
+            userFiles.User.userDirectory +
+            "/" +
+            filename.filename;
+
+          res.header(
+            "Access-Control-Allow-Origin",
+            "http://" + webIPaddress + ":" + webPortNumber
+          );
+          res.sendFile(newFileLocation);
+          console.log("file previewed:", filename.filename);
         }
       });
     }
-  })
-})
+  });
+});
+
+//Download
+app.get("/download/*", async (req, res) => {
+  console.log("download request");
+
+  // find user requesting
+  const url = req.url.toString();
+  const userRequest = url.split("/")[2];
+  const fileRequest = url.split("/")[3];
+
+  let userFiles;
+  let filename;
+  //Find user files
+  UserFiles.forEach((element) => {
+    if (element.User.SessionID == userRequest) {
+      userFiles = element;
+      userFiles.Files.forEach((file) => {
+        //Get file that corresponds to file token
+        if (file.token == fileRequest) {
+          filename = file;
+
+          //Get file directory
+          let newFileLocation =
+            __dirname +
+            "/UserFolders/" +
+            userFiles.User.userDirectory +
+            "/" +
+            filename.filename;
+
+          res.header(
+            "Access-Control-Allow-Origin",
+            "http://" + webIPaddress + ":" + webPortNumber
+          );
+          res.sendFile(newFileLocation);
+          console.log("file downloaded:", filename.filename);
+        }
+      });
+    }
+  });
+});
+
+app.delete("/delete?*", async (req, res) => {
+  console.log("delete request");
+
+  await deleteClass.deleteFile(req,res)
+  
+/*
+  fs.unlink(
+    __dirname +
+      "/UserFolders/" +
+      userFiles.User.userDirectory +
+      "/" +
+      filename.filename,
+    async (err) => {
+      if (err) {
+        res.header(
+          "Access-Control-Allow-Origin",
+          "http://" + webIPaddress + ":" + webPortNumber
+        );
+        res.send("Error 404: Not found");
+        console.log("failed to delete");
+      }
+      //Delete file from MySQL server
+      await deleteClass.deleteFile(
+        webIPaddress,
+        webPortNumber,
+        file.FileID,
+        userRequest
+      );
+      console.log(
+        "File deleted:",
+        file.filename,
+        "from user:",
+        userFiles.User.UserName
+      );
+      res.header(
+        "Access-Control-Allow-Origin",
+        "http://" + webIPaddress + ":" + webPortNumber
+      );
+      res.send("OK");
+    }
+  );
+  */
+
+});
 
 //Sends requested file to webpage
 app.all("*", async (req, res) => {
-  res.send("404 not found")
+  res.send("404 not found");
 });
 
 app.listen(port_number, host_IP, () => {
